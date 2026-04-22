@@ -1,0 +1,2850 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>패션 스타일 라이브러리 — 검색 평가 도구</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #ffffff;
+  --bg2: #f5f6f8;
+  --bg3: #eceef2;
+  --border: #dde0e8;
+  --border2: #c8ccd8;
+  --text: #1a1d26;
+  --text2: #5a6072;
+  --text3: #9098b0;
+  --accent: #3d5fff;
+  --accent2: #2b4aee;
+  --green: #12a05c;
+  --red: #e03030;
+  --amber: #d07700;
+  --sky: #0090c8;
+  --purple: #6d4fc9;
+  --tag-bg: #eef1ff;
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+input::placeholder, textarea::placeholder { color: var(--text3); opacity: 1; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── Layout ── */
+.shell {
+  display: grid;
+  grid-template-columns: 220px 1fr 240px;
+  grid-template-rows: 56px 1fr;
+  grid-template-areas: "header header header" "sidebar main stats";
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Header ── */
+header {
+  grid-area: header;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 16px;
+  z-index: 10;
+}
+
+.logo {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--text2);
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.logo span { color: var(--text2); }
+
+.header-mid {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mode-tabs {
+  display: flex;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  gap: 2px;
+}
+
+.mode-tab {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text2);
+  transition: all .15s;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+
+.mode-tab.active {
+  background: var(--accent2);
+  color: #fff;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.progress-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text2);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.progress-badge b { color: var(--green); }
+
+.btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+  color: var(--text);
+  transition: all .15s;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+
+.btn:hover { background: var(--bg2); border-color: var(--accent); color: var(--accent); }
+.btn-primary { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+.btn-primary:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-danger {
+  color: var(--red);
+  border-color: rgba(255,95,95,.35);
+  background: rgba(255,95,95,.08);
+}
+.btn-danger:hover {
+  color: #fff;
+  background: var(--red);
+  border-color: var(--red);
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  grid-area: sidebar;
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 16px 0;
+}
+
+.sidebar-section {
+  padding: 0 16px;
+  margin-bottom: 8px;
+}
+
+.sidebar-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  color: var(--text3);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  padding: 0 4px;
+}
+
+.query-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all .12s;
+  border: 1px solid transparent;
+  margin-bottom: 2px;
+}
+
+.query-item:hover { background: var(--bg3); }
+.query-item.active { background: var(--tag-bg); border-color: var(--accent2); }
+
+.query-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text3);
+  min-width: 20px;
+}
+
+.query-text {
+  font-size: 12px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.query-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border2);
+  flex-shrink: 0;
+}
+
+.query-dot.done { background: var(--green); }
+.query-dot.partial { background: var(--amber); }
+
+.type-badge {
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  flex-shrink: 0;
+}
+
+.type-단일 { background: #1c2a45; color: var(--accent); }
+.type-복수 { background: #1c2a35; color: #5bc8ff; }
+
+/* ── Main ── */
+.main {
+  grid-area: main;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.query-header {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.query-idx {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+.query-main { flex: 1; }
+
+.query-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.query-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.meta-dot { color: var(--border2); }
+
+/* ── Results Grid ── */
+.results-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 12px;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+}
+
+/* 하이브리드 전용: 카드+버튼 가로 배치 */
+.hybrid-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hybrid-result-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+  transition: all .15s;
+}
+
+.hybrid-result-row.rated-cross   { border-color: var(--green); background: #f0faf5; }
+.hybrid-result-row.rated-partial { border-color: var(--amber); background: #fffbf0; }
+.hybrid-result-row.rated-irrelevant { border-color: var(--red); background: #fff0f0; opacity: .75; }
+
+.hybrid-result-img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.hybrid-result-rank {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text2);
+  min-width: 24px;
+}
+
+.hybrid-score-btns {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.hybrid-score-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  min-height: 60px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border2);
+  background: var(--bg3);
+  cursor: pointer;
+  font-family: 'Noto Sans KR', sans-serif;
+  transition: all .12s;
+  gap: 2px;
+  padding: 6px 4px;
+}
+
+.hybrid-score-btn .hsb-score {
+  font-family: 'DM Mono', monospace;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.hybrid-score-btn .hsb-label {
+  font-size: 9px;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.hybrid-score-btn.s2       { color: var(--green); }
+.hybrid-score-btn.s2:hover, .hybrid-score-btn.s2.active { background: var(--green); border-color: var(--green); color: #fff; }
+.hybrid-score-btn.s1       { color: var(--amber); }
+.hybrid-score-btn.s1:hover, .hybrid-score-btn.s1.active { background: var(--amber); border-color: var(--amber); color: #fff; }
+.hybrid-score-btn.s0       { color: var(--red); }
+.hybrid-score-btn.s0:hover, .hybrid-score-btn.s0.active { background: var(--red);   border-color: var(--red);   color: #fff; }
+
+.text-eval-wrap {
+  width: 100%;
+}
+
+.result-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all .15s;
+  position: relative;
+}
+
+.result-card:hover { border-color: var(--border2); transform: translateY(-1px); }
+
+.result-card.rated-y {
+  border-color: var(--green);
+  background: #f0faf5;
+}
+
+.result-card.rated-n {
+  border-color: var(--red);
+  background: #fff0f0;
+  opacity: .7;
+}
+
+.result-card.rated-cross {
+  border-color: var(--green);
+  background: #d4f5e4;
+}
+
+.result-card.rated-same {
+  border-color: var(--sky);
+  background: #d4ecfa;
+}
+
+.result-card.rated-partial {
+  border-color: var(--amber);
+  background: #fef0cc;
+}
+
+.result-card.rated-irrelevant {
+  border-color: var(--red);
+  background: #fdd8d8;
+  opacity: .85;
+}
+
+.result-img {
+  width: 100%;
+  aspect-ratio: 1.02/1;
+  object-fit: cover;
+  display: block;
+  background: var(--bg3);
+  position: relative;
+}
+
+.result-img-placeholder {
+  width: 100%;
+  aspect-ratio: 1.02/1;
+  background: var(--bg3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text3);
+  font-size: 11px;
+}
+
+.result-img-placeholder .img-icon {
+  font-size: 24px;
+  opacity: .4;
+}
+
+.result-rank {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: rgba(255,255,255,.9);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  backdrop-filter: blur(4px);
+}
+
+.result-overlay { display: none; }
+
+.result-score-band {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  border-radius: var(--radius) var(--radius) 0 0;
+  display: none;
+}
+
+.result-card.rated-cross  .result-score-band { display: block; background: var(--green); color: #fff; }
+.result-card.rated-partial .result-score-band { display: block; background: var(--amber); color: #fff; }
+.result-card.rated-irrelevant .result-score-band { display: block; background: var(--red);   color: #fff; }
+
+.result-bottom {
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#main-text .result-img,
+#main-text .result-img-placeholder {
+  aspect-ratio: 0.98/1;
+}
+
+#main-text .result-bottom {
+  padding: 5px 7px;
+  display: flex;
+  justify-content: center;
+}
+
+#main-text .inline-score-btns {
+  grid-template-columns: repeat(3, 1fr);
+  width: 100%;
+}
+
+#main-text .result-id {
+  font-size: 9px;
+  max-width: 44px;
+}
+
+#main-text .inline-score-btn {
+  padding: 2px 0;
+  font-size: 9px;
+}
+
+.result-id {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yn-btns {
+  display: flex;
+  gap: 3px;
+}
+
+.yn-btn {
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text2);
+  transition: all .1s;
+  font-family: 'DM Mono', monospace;
+}
+
+.yn-btn.y:hover, .yn-btn.y.active { background: var(--green); border-color: var(--green); color: #0a1a10; }
+.yn-btn.n:hover, .yn-btn.n.active { background: var(--red); border-color: var(--red); color: #1a0808; }
+
+.img-judge-guide {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: nowrap;
+}
+
+/* 중복 제거 */
+
+.img-judge-guide {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  flex-wrap: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--bg);
+  padding: 8px 0 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.guide-pill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.guide-pill .gp-score {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 800;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.guide-pill .gp-body {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.guide-pill .gp-label {
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.guide-pill .gp-desc {
+  font-size: 10px;
+  opacity: .7;
+  line-height: 1.4;
+  display: block;
+  margin-top: 0;
+  padding-left: 0;
+}
+
+.guide-pill.cross   { color: var(--green); border-color: rgba(18,160,92,.35);  background: rgba(18,160,92,.08); }
+.guide-pill.cross   .gp-score { background: var(--green); color: #fff; }
+.guide-pill.partial { color: var(--amber); border-color: rgba(208,119,0,.35);  background: rgba(208,119,0,.08); }
+.guide-pill.partial .gp-score { background: var(--amber); color: #fff; }
+.guide-pill.none    { color: var(--red);   border-color: rgba(224,48,48,.3);   background: rgba(224,48,48,.08); }
+.guide-pill.none    .gp-score { background: var(--red);   color: #fff; }
+.guide-pill.same    { color: var(--sky);   border-color: rgba(0,144,200,.3);   background: rgba(0,144,200,.08); }
+.guide-pill.same    .gp-score { background: var(--sky);   color: #fff; }
+
+.img-rate-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  width: 100%;
+}
+
+.img-rate-btn {
+  padding: 4px 0;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text2);
+  transition: all .12s;
+  font-family: 'DM Mono', monospace;
+}
+
+.img-rate-btn.cross:hover, .img-rate-btn.cross.active { background: var(--green); border-color: var(--green); color: #07160f; }
+.img-rate-btn.same:hover, .img-rate-btn.same.active { background: var(--sky); border-color: var(--sky); color: #08131a; }
+.img-rate-btn.partial:hover, .img-rate-btn.partial.active { background: var(--amber); border-color: var(--amber); color: #1c1103; }
+.img-rate-btn.none:hover, .img-rate-btn.none.active { background: var(--red); border-color: var(--red); color: #170708; }
+
+.img-readonly {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 6px 10px;
+  font-size: 13px;
+  font-family: 'DM Mono', monospace;
+}
+
+.input-upload-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-dropzone {
+  border: 1.5px dashed var(--border2);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 76px;
+  transition: all .15s;
+  text-align: center;
+}
+
+.inline-score-btns {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  width: 100%;
+}
+
+.inline-score-btn {
+  padding: 3px 0;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text2);
+  transition: all .12s;
+  font-family: 'DM Mono', monospace;
+}
+
+.inline-score-btn.s3:hover, .inline-score-btn.s3.active { background: var(--green); border-color: var(--green); color: #fff; }
+.inline-score-btn.s2 { border-color: rgba(18,160,92,.4); color: var(--green); }
+.inline-score-btn.s2:hover, .inline-score-btn.s2.active { background: var(--green); border-color: var(--green); color: #fff; }
+.inline-score-btn.s1 { border-color: rgba(208,119,0,.4); color: var(--amber); }
+.inline-score-btn.s1:hover, .inline-score-btn.s1.active { background: var(--amber); border-color: var(--amber); color: #fff; }
+.inline-score-btn.s0 { border-color: rgba(224,48,48,.4); color: var(--red); }
+.inline-score-btn.s0:hover, .inline-score-btn.s0.active { background: var(--red); border-color: var(--red); color: #fff; }
+
+.score-chip {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255,255,255,.92);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  backdrop-filter: blur(4px);
+}
+
+.score-chip.s3 { color: var(--green); border-color: rgba(18,160,92,.5); }
+.score-chip.s2 { color: var(--sky);   border-color: rgba(0,144,200,.5); }
+.score-chip.s1 { color: var(--amber); border-color: rgba(208,119,0,.5); }
+.score-chip.s0 { color: var(--red);   border-color: rgba(224,48,48,.5); }
+
+.image-score-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.score-choice {
+  border: 1px solid var(--border2);
+  background: var(--bg3);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 12px 10px;
+  cursor: pointer;
+  text-align: left;
+  transition: all .12s;
+}
+
+.score-choice:hover { transform: translateY(-1px); }
+.score-choice.s3:hover { border-color: var(--green); background: rgba(61,214,140,.08); }
+.score-choice.s2:hover { border-color: var(--sky); background: rgba(91,200,255,.08); }
+.score-choice.s1:hover { border-color: var(--amber); background: rgba(255,181,71,.08); }
+.score-choice.s0:hover { border-color: var(--red); background: rgba(255,95,95,.08); }
+
+.score-choice-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.score-choice-label {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+.score-choice-desc {
+  font-size: 11px;
+  color: var(--text2);
+  line-height: 1.45;
+}
+
+/* ── Score row under results ── */
+.score-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.score-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.score-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text3);
+}
+
+.score-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.score-val.good { color: var(--green); }
+.score-val.warn { color: var(--amber); }
+.score-val.bad  { color: var(--red); }
+.score-val.na   { color: var(--text3); }
+
+/* ── Nav actions ── */
+.nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ── Stats panel ── */
+.stats-panel {
+  grid-area: stats;
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stats-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 10px;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.stat-row:last-child { border-bottom: none; }
+
+.stat-name {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.stat-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.stat-num.good { color: var(--green); }
+.stat-num.warn { color: var(--amber); }
+.stat-num.na   { color: var(--text3); }
+
+.mini-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.mini-bar-bg {
+  flex: 1;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.mini-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--accent);
+  transition: width .4s ease;
+}
+
+.target-line {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--text3);
+  white-space: nowrap;
+}
+
+.export-section { margin-top: auto; }
+
+.export-btn {
+  width: 100%;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+
+/* ── Scrollbars ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* ── Notification toast ── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 12px;
+  z-index: 999;
+  transition: transform .3s ease;
+  pointer-events: none;
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ── Modal ── */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100;
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s;
+}
+
+.modal-backdrop.open { opacity: 1; pointer-events: all; }
+
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 24px;
+  width: 440px;
+  max-width: 90vw;
+}
+
+.modal h3 {
+  font-size: 15px;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+
+.modal-field { margin-bottom: 12px; }
+
+.modal-field label {
+  display: block;
+  font-size: 11px;
+  color: var(--text2);
+  margin-bottom: 5px;
+}
+
+.modal-field input, .modal-field select {
+  width: 100%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+}
+
+.modal-field input:focus { border-color: var(--accent2); }
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+/* progress bar in header */
+.header-progress {
+  flex: 1;
+  max-width: 200px;
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.header-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width .4s ease;
+}
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+<!-- ── HEADER ── -->
+<header>
+  <div class="logo">search <span>evaluation</span></div>
+
+  <div class="header-mid">
+    <div class="mode-tabs">
+      <button class="mode-tab active" onclick="switchMode('text_basic')">텍스트 서치(복합 조건)</button>
+      <button class="mode-tab" onclick="switchMode('image_garment')">이미지 서치(가먼트)</button>
+      <button class="mode-tab" onclick="switchMode('image_sketch')">이미지 서치(스케치)</button>
+    </div>
+    <div class="header-progress"><div class="header-progress-fill" id="hdr-prog" style="width:0%"></div></div>
+  </div>
+
+  <div class="header-right">
+    <span class="progress-badge"><b id="hdr-done">0</b> / <span id="hdr-total">0</span></span>
+    <button class="btn btn-success" onclick="submitToSheets()" style="background:var(--green);color:#fff;border-color:var(--green);">구글 시트 제출</button>
+    <button class="btn btn-danger" onclick="resetState()">초기화</button>
+  </div>
+</header>
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="sidebar-section">
+    <div class="sidebar-label" id="sidebar-label">평가 목록</div>
+    <div id="query-list"></div>
+  </div>
+</aside>
+
+<!-- ── MAIN: 텍스트 기본 / 하이브리드 공용 ── -->
+<main class="main" id="main-text">
+
+  <div class="query-header">
+    <div class="query-idx" id="q-idx">#01</div>
+    <div class="query-main">
+      <div class="query-title">
+        <span id="q-mode-badge" class="type-badge" style="background:var(--tag-bg);color:var(--accent2);border:1px solid rgba(61,95,255,.3);">텍스트</span>
+        <span id="q-hybrid-badge" class="type-badge" style="display:none;background:var(--tag-bg);color:var(--accent2);border:1px solid rgba(61,95,255,.3);">텍스트+이미지</span>
+        <span id="q-text">—</span>
+        <span id="q-example-badge" style="display:none;font-size:9px;padding:1px 5px;border-radius:3px;background:#fff8e0;color:#a06000;border:1px solid #e8c840;font-weight:600;">예시</span>
+      </div>
+      <div class="query-meta">
+        <span id="q-status-text" style="color:var(--text3)">미평가</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="text-eval-wrap">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;">
+        <div id="input-label" style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:5px;">입력 텍스트</div>
+        <input
+          type="text"
+          id="text-query-input"
+          placeholder="예: shirring at skirt"
+          style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);padding:8px 10px;font-size:13px;font-family:inherit;outline:none;"
+        >
+      </div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:5px;">코멘트</div>
+        <textarea id="text-comment"
+          placeholder="결과에 대한 기타 의견을 남겨주세요"
+          style="width:100%;height:100px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);padding:8px 10px;font-size:12px;font-family:inherit;outline:none;resize:none;line-height:1.5;"
+          oninput="saveComment('text', this.value)"></textarea>
+      </div>
+    </div>
+
+    <div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="results-label" id="results-label" style="margin-bottom:0;">검색 결과</div>
+        <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid rgba(61,95,255,.4);color:var(--accent);background:rgba(61,95,255,.08);white-space:nowrap;">개별 평가</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+        <button class="btn" onclick="prevQuery()" style="padding:4px 10px;">← 이전</button>
+        <button class="btn btn-primary" onclick="nextQuery()" style="padding:4px 10px;">다음 →</button>
+        <button class="btn" onclick="addNextQuery()" style="padding:4px 10px;">+ 새 항목</button>
+        <div style="width:10px;"></div>
+        <button class="btn btn-danger" onclick="clearCurrentResults()" style="padding:4px 10px;">결과 이미지 삭제</button>
+      </div>
+    </div>
+
+    <div class="img-judge-guide" id="text-guide-pills" style="margin-top:0;margin-bottom:10px;">
+      <span class="guide-pill cross"><span class="gp-score">2</span><span class="gp-body"><span class="gp-label">활용 가능</span><span class="gp-desc">✅ 검색 조건이 모두 반영된 결과</span></span></span>
+      <span class="guide-pill partial"><span class="gp-score">1</span><span class="gp-body"><span class="gp-label">보통</span><span class="gp-desc">⚠️ 검색 조건 일부만 반영된 결과</span></span></span>
+      <span class="guide-pill none"><span class="gp-score">0</span><span class="gp-body"><span class="gp-label">활용 불가</span><span class="gp-desc">❌ 검색 조건이 반영되지 않은 결과</span></span></span>
+    </div>
+
+    <div id="dropzone"
+      style="margin-bottom:10px;border:1.5px dashed var(--border2);border-radius:var(--radius);padding:12px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;transition:all .15s;min-height:60px;"
+      ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='var(--tag-bg)'"
+      ondragleave="this.style.borderColor='var(--border2)';this.style.background='transparent'"
+      ondrop="handleDrop(event)">
+      <div style="font-size:18px;opacity:.4;">🖼</div>
+      <div style="font-size:11px;font-weight:600;color:var(--text2);">검색 결과 캡처 드래그 앤 드롭</div>
+      <div style="font-size:10px;color:var(--text3);">1개 — 덮어쓰기 &nbsp;|&nbsp; 2개 이상 — 순서대로 이어붙이기</div>
+    </div>
+
+    <div class="results-grid" id="results-grid"></div>
+
+    </div>
+  </div>
+  <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);text-align:right;">
+    <span id="nav-idx">1</span> / <span id="nav-total">1</span>
+  </div>
+
+</main>
+
+<!-- ── MAIN: 이미지 교차검색 전용 ── -->
+<main class="main" id="main-image" style="display:none;">
+
+  <div class="query-header">
+    <div class="query-idx" id="img-idx">#01</div>
+    <div class="query-main">
+      <div class="query-title">
+        <span id="img-scenario-badge" class="type-badge" style="background:var(--tag-bg);color:var(--accent2);border:1px solid rgba(61,95,255,.3);">이미지</span>
+        <span id="img-pair-label">—</span>
+      </div>
+      <div class="query-meta">
+        <span id="img-status-text" style="color:var(--text3)">미평가</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 검색 결과 -->
+  <div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="results-label" style="margin-bottom:0;">검색 결과</div>
+        <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid rgba(18,160,92,.4);color:var(--green);background:rgba(18,160,92,.08);white-space:nowrap;">종합 평가</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+        <button class="btn" onclick="prevQuery()" style="padding:4px 10px;">← 이전</button>
+        <button class="btn btn-primary" onclick="nextQuery()" style="padding:4px 10px;">다음 →</button>
+        <button class="btn" onclick="addNextQuery()" style="padding:4px 10px;">+ 새 항목</button>
+        <div style="width:10px;"></div>
+        <button class="btn btn-danger" onclick="clearCurrentResults()" style="padding:4px 10px;">결과 이미지 삭제</button>
+      </div>
+    </div>
+
+    <div class="img-judge-guide" style="margin-top:0;margin-bottom:10px;" id="img-overall-guide">
+      <span class="guide-pill cross" id="img-score-2" style="cursor:pointer;flex:1;" onclick="rateImageOverall(2)"><span class="gp-score">2</span><span class="gp-body"><span class="gp-label">활용 가능</span><span class="gp-desc">✅ 의도 일치</span><span class="gp-desc">✅ 의류 + 스케치 출력</span></span></span>
+      <span class="guide-pill partial" id="img-score-1" style="cursor:pointer;flex:1;" onclick="rateImageOverall(1)"><span class="gp-score">1</span><span class="gp-body"><span class="gp-label">보통</span><span class="gp-desc">✅ 의도 일치</span><span class="gp-desc">⚠️ 의류 or 스케치만 출력</span></span></span>
+      <span class="guide-pill none" id="img-score-0" style="cursor:pointer;flex:1;" onclick="rateImageOverall(0)"><span class="gp-score">0</span><span class="gp-body"><span class="gp-label">활용 불가</span><span class="gp-desc">❌ 의도 불일치</span></span></span>
+    </div>
+
+  <!-- 입력 이미지 + 코멘트 2열 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);">입력 이미지</div>
+        <span id="img-input-label-text" style="font-size:10px;font-weight:700;padding:1px 7px;border-radius:999px;border:1px solid var(--accent2);color:var(--accent2);background:var(--tag-bg);display:none;"></span>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:10px;">
+        <div id="img-input-preview"
+          style="width:120px;height:120px;background:var(--bg3);border:1.5px dashed var(--border2);border-radius:var(--radius-sm);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;overflow:hidden;flex-shrink:0;cursor:pointer;transition:all .15s;"
+          onclick="document.getElementById('input-image-file').click()">
+          <span style="font-size:24px;opacity:.3;pointer-events:none;">🖼</span>
+          <span style="font-size:9px;color:var(--text3);pointer-events:none;">드래그 앤 드롭</span>
+        </div>
+        <input type="file" id="input-image-file" accept="image/*" style="display:none;" onchange="handleInputImageFile(event)">
+        <button class="btn" style="font-size:11px;padding:3px 10px;margin-top:2px;" onclick="clearCurrentInputImage()">이미지 삭제</button>
+      </div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:5px;">코멘트</div>
+      <textarea id="img-comment"
+        placeholder="결과에 대한 기타 의견을 남겨주세요"
+        style="width:100%;height:100px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);padding:8px 10px;font-size:12px;font-family:inherit;outline:none;resize:none;line-height:1.5;"
+        oninput="saveComment('image', this.value)"></textarea>
+    </div>
+  </div>
+
+    <div id="img-dropzone"
+      style="margin-bottom:10px;border:1.5px dashed var(--border2);border-radius:var(--radius);padding:12px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;transition:all .15s;min-height:60px;"
+      ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='var(--tag-bg)'"
+      ondragleave="this.style.borderColor='var(--border2)';this.style.background='transparent'"
+      ondrop="smartDrop(event)">
+      <div style="font-size:18px;opacity:.4;">🖼</div>
+      <div style="font-size:11px;font-weight:600;color:var(--text2);">검색 결과 캡처 드래그 앤 드롭</div>
+      <div style="font-size:10px;color:var(--text3);">1개 — 덮어쓰기 &nbsp;|&nbsp; 2개 이상 — 순서대로 이어붙이기</div>
+    </div>
+
+    <div class="results-grid" id="img-results-grid"></div>
+  </div>
+
+  <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text3);text-align:right;margin-top:8px;">
+    <span id="img-nav-idx">1</span> / <span id="img-nav-total">1</span>
+  </div>
+
+</main>
+
+<!-- ── STATS PANEL ── -->
+<aside class="stats-panel">
+
+  <div>
+    <div class="stats-section-title">진행 현황</div>
+    <div class="stat-row">
+      <span class="stat-name">완료</span>
+      <span class="stat-num good" id="st-done">0</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-name">미완료</span>
+      <span class="stat-num na" id="st-remain">0</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-name">완료율</span>
+      <span class="stat-num" id="st-pct" style="color:var(--accent)">0%</span>
+    </div>
+  </div>
+
+  <div id="stats-scores-section">
+    <div class="stats-section-title">평균 점수</div>
+    <div id="stats-scores-body"></div>
+  </div>
+
+  <div>
+    <div class="stats-section-title" id="breakdown-title">유형별 Avg@5</div>
+    <div id="type-breakdown"></div>
+  </div>
+
+  <div class="export-section">
+    <button class="btn export-btn btn-primary" onclick="downloadXLSX()">평가 결과 다운로드</button>
+  </div>
+
+</aside>
+</div>
+
+<!-- ── ADD QUERY MODAL ── -->
+<div class="modal-backdrop" id="add-modal">
+  <div class="modal">
+    <h3 id="add-modal-title">항목 추가</h3>
+    <div class="modal-field">
+      <label id="new-query-text-label">테스트 쿼리</label>
+      <input type="text" id="new-query-text" placeholder="예: shirring at skirt">
+    </div>
+    <div class="modal-field" id="text-type-field">
+      <label>유형</label>
+      <select id="new-query-type">
+        <option value="단일">단일속성</option>
+        <option value="복수">복수속성</option>
+      </select>
+    </div>
+    <div class="modal-field" id="text-urls-field">
+      <label>결과 이미지 URL (줄바꿈으로 최대 10개, 없으면 더미 사용)</label>
+      <textarea id="new-query-urls" rows="4" style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);padding:7px 10px;font-size:12px;font-family:'DM Mono',monospace;outline:none;resize:vertical" placeholder="https://example.com/img1.jpg&#10;https://example.com/img2.jpg"></textarea>
+    </div>
+    <div id="image-add-fields" style="display:none;">
+      <div class="modal-field">
+        <label>평가 항목명</label>
+        <input type="text" id="new-image-label" placeholder="예: 2026 SS 스케치 01">
+      </div>
+      <div class="modal-field">
+        <label>입력 ID</label>
+        <input type="text" id="new-image-input-id" placeholder="예: SKT_101">
+      </div>
+      <div class="modal-field">
+        <label>시나리오</label>
+        <select id="new-image-scenario">
+          <option value="이미지 서치">이미지 서치(교차 검색)</option>
+        </select>
+      </div>
+      <div class="modal-field">
+        <label>입력 이미지 파일</label>
+        <input type="file" id="new-image-file" accept="image/*">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">취소</button>
+      <button class="btn btn-primary" onclick="addQuery()">추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+
+// ══════════════════════════════════════════
+//  더미 이미지 생성
+// ══════════════════════════════════════════
+function makeDummyResults() {
+  return [];
+}
+
+
+
+function makeImageDummyResults() {
+  return []; // 드래그&드롭으로 10개 단위 추가
+}
+
+// ══════════════════════════════════════════
+//  모드별 데이터셋 (완전 분리)
+// ══════════════════════════════════════════
+const MODE_DATA = {
+  text_basic: {
+    label: '텍스트 서치(복합 조건)',
+    sidebarLabel: '평가 목록 — 텍스트 서치(복합 조건)',
+    typeOptions: ['단일', '복수'],
+    typeLabels: { '단일': '단일속성', '복수': '복수속성' },
+    scores: [
+      { key:'avgTop5',   label:'Avg@5',        target:0.70 },
+      { key:'avgTop10',  label:'Avg@10',        target:0.60 },
+      { key:'hit2Top5',  label:'활용가능 @5',   target:0.60 },
+      { key:'hit1Top10', label:'보통이상 @10',  target:0.80 },
+    ],
+    queries: [
+      { id:1, text:'', placeholder:'예: shirring at skirt', inputId:'TXT_001', type:'단일', attrs:0, isExample:false, results: makeDummyResults() },
+      { id:2, text:'', placeholder:'예: ruching', inputId:'TXT_002', type:'단일', attrs:0, isExample:false, results: makeDummyResults() },
+      { id:3, text:'', placeholder:'예: shirring at chest, drawstring', inputId:'TXT_003', type:'복수', attrs:0, isExample:false, results: makeDummyResults() },
+      { id:4, text:'', placeholder:'예: shirring at hem, runching', inputId:'TXT_004', type:'복수', attrs:0, isExample:false, results: makeDummyResults() },
+    ],
+  },
+  image_garment: {
+    label: '이미지 서치(가먼트)',
+    sidebarLabel: '평가 목록 — 이미지 서치(가먼트)',
+    typeOptions: [], scores: [], queries: [],
+  },
+  image_sketch: {
+    label: '이미지 서치(스케치)',
+    sidebarLabel: '평가 목록 — 이미지 서치(스케치)',
+    typeOptions: [], scores: [], queries: [],
+  },
+};
+
+// ══════════════════════════════════════════
+//  State
+// ══════════════════════════════════════════
+let currentMode = 'text_basic';
+let currentIdx  = 0;
+let pendingImageInputUrl = '';
+const STORAGE_KEY = 'eval-fashion-state-v16';
+
+function modeData()    { return MODE_DATA[currentMode]; }
+function modeQueries() { return modeData().queries; }
+
+function isImageMode(mode = currentMode) {
+  return mode === 'image_garment' || mode === 'image_sketch';
+}
+
+function getResultDecision(result, mode = currentMode) {
+  if (result.score != null) return result.score;
+  if (!isImageMode(mode) && result.yn != null) return result.yn === 'Y' ? 3 : 0;
+  return null;
+}
+
+function isResultRated(result, mode = currentMode) {
+  return getResultDecision(result, mode) !== null;
+}
+
+function isQueryDone(q, mode = currentMode) {
+  if (isImageMode(mode)) return q.overallScore != null;
+  return q.results.length > 0 && q.results.every(r => isResultRated(r, mode));
+}
+
+function isQueryPartial(q, mode = currentMode) {
+  if (isImageMode(mode)) return false;
+  return q.results.length > 0 && !isQueryDone(q, mode) && q.results.some(r => isResultRated(r, mode));
+}
+
+function getResultCardClass(result, mode = currentMode) {
+  const score = getResultDecision(result, mode);
+  return ({
+    2: 'rated-cross',
+    1: 'rated-partial',
+    0: 'rated-irrelevant',
+  })[score] || '';
+}
+
+function getScoreBandLabel(score) { return score===2?'활용 가능':score===1?'보통':score===0?'활용 불가':''; }
+function getImageScoreLabel(score) {
+  return ({
+    2: '<span style="color:var(--green);font-size:13px;font-weight:700;">활용 가능</span>',
+    1: '<span style="color:var(--amber);font-size:13px;font-weight:700;">보통</span>',
+    0: '<span style="color:var(--red);font-size:13px;font-weight:700;">활용 불가</span>',
+  })[score] || '';
+}
+
+function getImageScenarioHint(q) {
+  if (q.scenario.startsWith('스케치')) return '입력 스케치 기준으로 실제 의류가 잘 나오면 3점, 유사 결과면 2점';
+  if (q.scenario.startsWith('실제')) return '입력 실사 기준으로 스케치/연계 결과가 적절하면 3점';
+  return '교차검색 의도에 매우 적합하면 3점, 적합하면 2점, 부분 일치 1점, 무관 0점';
+}
+
+function getActiveGridConfig() {
+  return { cols: 5, rows: 2, padding: 0 };
+}
+
+function getActiveDropzone() {
+  return document.getElementById(isImageMode() ? 'img-dropzone' : 'dropzone');
+}
+
+function saveState() {
+  try {
+    const snapshot = {
+      currentMode,
+      currentIdx,
+      modeData: {
+        text_basic:  { queries: MODE_DATA.text_basic.queries.map(q => ({
+          ...q, results: q.results.map(r => ({ id: r.id, score: r.score, yn: r.yn }))
+        }))},
+        image_garment: { queries: MODE_DATA.image_garment.queries.map(q => ({
+          ...q, overallScore: q.overallScore ?? null, results: q.results.map(r => ({ id: r.id, score: r.score, yn: r.yn }))
+        }))},
+        image_sketch: { queries: MODE_DATA.image_sketch.queries.map(q => ({
+          ...q, overallScore: q.overallScore ?? null, results: q.results.map(r => ({ id: r.id, score: r.score, yn: r.yn }))
+        }))},
+      }
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+  } catch(e) { console.warn('저장 실패', e); }
+}
+
+function loadState() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return false;
+  try {
+    const parsed = JSON.parse(raw);
+    ['text_basic','image_garment','image_sketch'].forEach(mode => {
+      if (parsed.modeData?.[mode]?.queries) {
+        MODE_DATA[mode].queries = parsed.modeData[mode].queries.map(q => ({
+          ...q,
+          results: (q.results || []).map(r => ({
+            id: r.id, url: null,
+            score: r.score ?? null, yn: r.yn ?? null,
+            imgMatch: r.imgMatch ?? null, txtMatch: r.txtMatch ?? null
+          }))
+        }));
+      }
+    });
+    currentMode = parsed.currentMode || currentMode;
+    currentIdx  = parsed.currentIdx  || 0;
+    return true;
+  } catch {
+    localStorage.removeItem(STORAGE_KEY);
+    return false;
+  }
+}
+
+// ══════════════════════════════════════════
+//  초기화
+// ══════════════════════════════════════════
+function resetState() {
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+}
+
+// ══════════════════════════════════════════
+//  모드 전환
+// ══════════════════════════════════════════
+function switchMode(mode) {
+  currentMode = mode;
+  currentIdx  = 0;
+
+  document.querySelectorAll('.mode-tab').forEach((t, i) => {
+    t.classList.toggle('active', ['text_basic','image_garment','image_sketch'][i] === mode);
+  });
+
+  // 메인 패널 전환
+  const isImage = isImageMode(mode);
+  document.getElementById('main-text').style.display  = isImage ? 'none' : 'flex';
+  document.getElementById('main-image').style.display = isImage ? 'flex' : 'none';
+
+  // 사이드바 라벨
+  document.getElementById('sidebar-label').textContent = modeData().sidebarLabel;
+
+  renderSidebar();
+  renderQuery(0);
+  updateStats();
+  saveState();
+}
+
+// ══════════════════════════════════════════
+//  사이드바
+// ══════════════════════════════════════════
+function renderSidebar() {
+  const qs = modeQueries();
+  const isImage = isImageMode();
+  document.getElementById('query-list').innerHTML = qs.map((q, i) => {
+    const done    = isQueryDone(q, currentMode);
+    const partial = isQueryPartial(q, currentMode);
+    const label   = isImage ? (q.label || q.inputId || `${q.scenario}`) : (q.text || q.placeholder || '—');
+    const labelStyle = (!isImage && !q.text) ? 'color:var(--text3);' : '';
+    const badge = '';
+    const exBadge = q.isExample
+      ? `<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#fff8e0;color:#a06000;border:1px solid #e8c840;font-weight:600;flex-shrink:0;">예시</span>`
+      : '';
+    return `<div class="query-item ${i === currentIdx ? 'active' : ''}" onclick="goQuery(${i})">
+      <span class="query-num">${String(i+1).padStart(2,'0')}</span>
+      <span class="query-text" style="${labelStyle}" title="${label}">${label}</span>
+      ${exBadge}${badge}
+      <span class="query-dot ${done ? 'done' : partial ? 'partial' : ''}"></span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('hdr-total').textContent = qs.length;
+  if (!document.getElementById('main-image').style.display || document.getElementById('main-image').style.display === 'none') {
+    document.getElementById('nav-total').textContent = qs.length;
+  } else {
+    document.getElementById('img-nav-total').textContent = qs.length;
+  }
+}
+
+// ══════════════════════════════════════════
+//  쿼리 렌더 (텍스트 기본 / 하이브리드)
+// ══════════════════════════════════════════
+function renderTextQuery(idx) {
+  const q = modeQueries()[idx];
+  const md = modeData();
+
+  document.getElementById('q-idx').textContent = '#' + String(idx+1).padStart(2,'0');
+  document.getElementById('q-text').textContent = q.inputId || `TXT_${String(idx+1).padStart(3,'0')}`;
+  document.getElementById('text-query-input').value = q.text || '';
+  document.getElementById('text-query-input').placeholder = q.placeholder || '예: shirring at skirt';
+  document.getElementById('nav-idx').textContent = idx + 1;
+  const exBadge = document.getElementById('q-example-badge');
+  if (exBadge) exBadge.style.display = q.isExample ? 'inline' : 'none';
+
+  const isHybrid = false;
+
+  // 평가 방식 배지
+  const evalBadge = document.getElementById('eval-type-badge');
+  if (evalBadge) {
+    if (isHybrid) {
+      evalBadge.textContent = '개별 평가';
+      evalBadge.style.color = 'var(--accent)';
+      evalBadge.style.borderColor = 'rgba(61,95,255,.4)';
+      evalBadge.style.background = 'rgba(61,95,255,.08)';
+    } else {
+      evalBadge.textContent = '전체 평가';
+      evalBadge.style.color = 'var(--green)';
+      evalBadge.style.borderColor = 'rgba(18,160,92,.4)';
+      evalBadge.style.background = 'rgba(18,160,92,.08)';
+    }
+  }
+  const modeBadge = document.getElementById('q-mode-badge');
+  const hybridBadge = document.getElementById('q-hybrid-badge');
+  if (modeBadge) modeBadge.style.display = isHybrid ? 'none' : 'inline';
+  if (hybridBadge) hybridBadge.style.display = isHybrid ? 'inline' : 'none';
+  const hybridArea = document.getElementById('hybrid-img-area');
+  const inputLabel = document.getElementById('input-label');
+  if (hybridArea) hybridArea.style.display = isHybrid ? 'block' : 'none';
+  if (inputLabel) inputLabel.textContent = '입력 텍스트';
+
+  // 하이브리드 입력 이미지 미리보기 복원
+  if (isHybrid) {
+    const preview = document.getElementById('hybrid-input-preview');
+    if (preview) {
+      preview.innerHTML = q.inputUrl
+        ? `<img src="${q.inputUrl}" style="width:100%;height:100%;object-fit:contain;background:#fff;">`
+        : `<span style="font-size:24px;opacity:.3;">🖼</span><span style="font-size:9px;color:var(--text3);">입력 이미지 드래그앤드롭</span>`;
+    }
+  }
+
+  // 모드별 가이드 텍스트
+  const guide = document.getElementById('text-guide-pills');
+  if (guide) {
+    if (isHybrid) {
+      guide.innerHTML = `
+        <span class="guide-pill cross"><span class="gp-score">2</span><span class="gp-body"><span class="gp-label">활용 가능</span><span class="gp-desc">모두 충족</span></span></span>
+        <span class="guide-pill partial"><span class="gp-score">1</span><span class="gp-body"><span class="gp-label">보통</span><span class="gp-desc">텍스트/이미지 중 하나만 충족</span></span></span>
+        <span class="guide-pill none"><span class="gp-score">0</span><span class="gp-body"><span class="gp-label">활용 불가</span><span class="gp-desc">모두 충족하지 못함</span></span></span>`;
+    } else {
+      guide.innerHTML = `
+        <span class="guide-pill cross"><span class="gp-score">2</span><span class="gp-body"><span class="gp-label">활용 가능</span><span class="gp-desc">✅ 검색 조건이 모두 반영된 결과</span></span></span>
+        <span class="guide-pill partial"><span class="gp-score">1</span><span class="gp-body"><span class="gp-label">보통</span><span class="gp-desc">⚠️ 검색 조건 일부만 반영된 결과</span></span></span>
+        <span class="guide-pill none"><span class="gp-score">0</span><span class="gp-body"><span class="gp-label">활용 불가</span><span class="gp-desc">❌ 검색 조건이 반영되지 않은 결과</span></span></span>`;
+    }
+  }
+
+  const done = isQueryDone(q, currentMode);
+  const partial = isQueryPartial(q, currentMode);
+  const st = document.getElementById('q-status-text');
+  if (done)         { st.textContent = '평가 완료 ✓'; st.style.color = 'var(--green)'; }
+  else if (partial) { st.textContent = `${q.results.filter(r=>isResultRated(r, currentMode)).length}/${q.results.length} 입력됨`; st.style.color = 'var(--amber)'; }
+  else              { st.textContent = '미평가'; st.style.color = 'var(--text3)'; }
+
+  const filteredResults = q.results.filter(r => r.url);
+
+
+  // 텍스트 서치(일반): 기존 그리드
+  document.getElementById('results-grid').className = 'results-grid';
+  document.getElementById('results-grid').innerHTML = q.results
+    .map((r, ri) => ({ r, ri }))
+    .filter(({ r }) => r.url)
+    .map(({ r, ri }) => {
+    const displayScore = getResultDecision(r, currentMode);
+    return `
+    <div class="result-card ${getResultCardClass(r, currentMode)}" id="rc-${ri}">
+      <img class="result-img" src="${r.url}" loading="lazy">
+      <div class="result-rank">R${ri+1}</div>
+      <div class="score-chip ${displayScore!=null?`s${displayScore}`:''}">${displayScore == null ? '—' : displayScore}</div>
+      <div class="result-score-band">${getScoreBandLabel(displayScore)}</div>
+      <div class="result-bottom" style="padding:5px 6px;">
+        <div class="inline-score-btns" style="grid-template-columns:repeat(3,1fr);width:100%;">
+          <button class="inline-score-btn s2 ${displayScore===2?'active':''}" onclick="rateTextDirect(${ri},2,event)">2</button>
+          <button class="inline-score-btn s1 ${displayScore===1?'active':''}" onclick="rateTextDirect(${ri},1,event)">1</button>
+          <button class="inline-score-btn s0 ${displayScore===0?'active':''}" onclick="rateTextDirect(${ri},0,event)">0</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function saveComment(type, value) {
+  const q = modeQueries()[currentIdx];
+  q.comment = value;
+  saveState();
+}
+
+function restoreComment(type) {
+  const q = modeQueries()[currentIdx];
+  const id = type === 'image' ? 'img-comment' : 'text-comment';
+  const el = document.getElementById(id);
+  if (el) el.value = q.comment || '';
+}
+
+function saveInputUrls() {
+  try {
+    const urls = {};
+    ['image_garment', 'image_sketch'].forEach(mode => {
+      MODE_DATA[mode].queries.forEach(q => {
+        if (q.inputUrl) urls[`${mode}_${q.id}`] = q.inputUrl;
+      });
+    });
+    sessionStorage.setItem('eval_input_urls', JSON.stringify(urls));
+  } catch(e) { console.warn('입력 이미지 저장 실패', e); }
+}
+
+function loadInputUrls() {
+  try {
+    const raw = sessionStorage.getItem('eval_input_urls');
+    if (!raw) return;
+    const urls = JSON.parse(raw);
+    ['image_garment', 'image_sketch'].forEach(mode => {
+      MODE_DATA[mode].queries.forEach(q => {
+        const key = `${mode}_${q.id}`;
+        if (urls[key]) q.inputUrl = urls[key];
+      });
+    });
+  } catch(e) { console.warn('입력 이미지 복원 실패', e); }
+}
+
+function saveCurrentTextQueryText() {
+  if (!input) return;
+  const q = modeQueries()[currentIdx];
+  const nextText = input.value.trim();
+  q.text = nextText || `텍스트 입력 ${String(currentIdx + 1).padStart(2, '0')}`;
+  q.attrs = nextText ? nextText.split(/\s+/).filter(Boolean).length : 0;
+  if (q.isExample) {
+    q.isExample = false;
+    const exBadge = document.getElementById('q-example-badge');
+    if (exBadge) exBadge.style.display = 'none';
+  }
+  document.getElementById('q-text').textContent = q.text;
+  renderSidebar();
+  saveState();
+  restoreComment('text');
+}
+
+// ══════════════════════════════════════════
+//  쿼리 렌더 (이미지 교차)
+// ══════════════════════════════════════════
+function renderImageQuery(idx) {
+  const q = modeQueries()[idx];
+  const sc = calcScores(q);
+
+  document.getElementById('img-idx').textContent = '#' + String(idx+1).padStart(2,'0');
+  document.getElementById('img-pair-label').textContent = q.inputId || q.label || `IMG_${String(idx+1).padStart(3,'0')}`;
+  document.getElementById('img-scenario-badge').textContent = '이미지';
+  document.getElementById('img-nav-idx').textContent   = idx + 1;
+
+  const done = isQueryDone(q, currentMode);
+  const partial = isQueryPartial(q, currentMode);
+  const st = document.getElementById('img-status-text');
+  if (done)         { st.textContent = '평가 완료 ✓'; st.style.color = 'var(--green)'; }
+  else if (partial) { st.textContent = `${q.results.filter(r=>isResultRated(r, currentMode)).length}/${q.results.length} 입력됨`; st.style.color = 'var(--amber)'; }
+  else              { st.textContent = '미평가'; st.style.color = 'var(--text3)'; }
+
+  // 입력 이미지
+  const inputPreview = document.getElementById('img-input-preview');
+  if (inputPreview) {
+    if (q.inputUrl) {
+      inputPreview.innerHTML = `<img src="${q.inputUrl}" style="width:100%;height:100%;object-fit:contain;background:#fff;">`;
+    } else {
+      inputPreview.innerHTML = `<span style="font-size:24px;opacity:.3;">🖼</span><span style="font-size:9px;color:var(--text3);">드래그 앤 드롭</span>`;
+    }
+  }
+
+  // 결과 그리드 (이미지만 표시, 개별 점수 없음)
+  document.getElementById('img-results-grid').innerHTML = q.results
+    .filter(r => r.url)
+    .map((r, ri) => `
+    <div class="result-card" id="img-rc-${ri}">
+      <img class="result-img" src="${r.url}" loading="lazy">
+      <div class="result-rank">R${ri+1}</div>
+    </div>`).join('');
+
+  // 종합 평가 pill 상태 복원
+  const pillMap = { 2: 'cross', 1: 'partial', 0: 'none' };
+  const bgMap   = { cross: 'var(--green)', partial: 'var(--amber)', none: 'var(--red)' };
+  [0, 1, 2].forEach(s => {
+    const pill = document.getElementById(`img-score-${s}`);
+    if (!pill) return;
+    const type = pillMap[s];
+    if (q.overallScore === s) {
+      pill.style.background = bgMap[type];
+      pill.style.color = '#fff';
+      pill.style.borderColor = bgMap[type];
+      const scoreEl = pill.querySelector('.gp-score');
+      if (scoreEl) { scoreEl.style.background = 'rgba(255,255,255,.3)'; scoreEl.style.color = '#fff'; }
+    } else {
+      pill.style.background = '';
+      pill.style.color = '';
+      pill.style.borderColor = '';
+      const scoreEl = pill.querySelector('.gp-score');
+      if (scoreEl) { scoreEl.style.background = ''; scoreEl.style.color = ''; }
+    }
+  });
+  restoreComment('image');
+}
+
+// ══════════════════════════════════════════
+//  스코어 카드 렌더 (공용)
+// ══════════════════════════════════════════
+function renderScoreCards(containerId, scores, defs) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = defs.map(d => {
+    const v = scores ? scores[d.key] : null;
+    const s = v == null ? '—' : v.toFixed(2);
+    const cls = v == null ? 'na' : v >= d.target ? 'good' : v >= d.target * 0.85 ? 'warn' : 'bad';
+    return `<div class="score-card">
+      <div>
+        <div class="score-label">${d.label}</div>
+        <div class="score-label" style="font-size:9px;margin-top:1px">목표 ≥ ${d.target.toFixed(2)}</div>
+      </div>
+      <div class="score-val ${cls}">${s}</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+//  점수 계산
+// ══════════════════════════════════════════
+function calcScores(q) {
+  if (isImageMode()) {
+    if (q.overallScore == null) return null;
+    return {
+      avgTop5:   q.overallScore / 2,
+      avgTop10:  q.overallScore / 2,
+      hit2Top5:  q.overallScore === 2 ? 1 : 0,
+      hit1Top10: q.overallScore >= 1 ? 1 : 0,
+    };
+  }
+
+  const scores = q.results.map(r => getResultDecision(r, currentMode));
+  if (scores.every(v => v == null)) return null;
+
+  const total    = scores.length;
+  const maxScore = 2;
+  const normalized = scores.map(v => v == null ? 0 : v / maxScore);
+  const top5  = normalized.slice(0, 5);
+  const top10 = normalized.slice(0, Math.min(10, total));
+  const rawTop5  = scores.slice(0, 5);
+  const rawTop10 = scores.slice(0, Math.min(10, total));
+  const top10len = top10.length;
+
+  return {
+    avgTop5:    top5.reduce((a, b) => a + b, 0) / Math.min(5, total),
+    avgTop10:   top10len ? top10.reduce((a, b) => a + b, 0) / top10len : 0,
+    hit3Top5:   rawTop5.some(v => v === 3) ? 1 : 0,
+    hit2Top10:  rawTop10.some(v => v != null && v >= 2) ? 1 : 0,
+    hit2Top5:   rawTop5.some(v => v === 2) ? 1 : 0,
+    hit1Top10:  rawTop10.some(v => v != null && v >= 1) ? 1 : 0,
+  };
+}
+
+// ══════════════════════════════════════════
+//  공통 renderQuery 진입점
+// ══════════════════════════════════════════
+function renderQuery(idx) {
+  currentIdx = idx;
+  if (isImageMode()) renderImageQuery(idx);
+  else renderTextQuery(idx);
+  renderSidebar();
+  saveState();
+}
+
+// ══════════════════════════════════════════
+//  결과 직접 점수 평가
+// ══════════════════════════════════════════
+function refreshTextScoreCard(ri) {
+  const q = modeQueries()[currentIdx];
+  const card = document.getElementById('rc-' + ri);
+  if (!card) return;
+  const r = q.results[ri];
+  const displayScore = getResultDecision(r, currentMode);
+  card.className = 'result-card ' + getResultCardClass(r, currentMode);
+  const chip = card.querySelector('.score-chip');
+  if (chip) {
+    chip.className = `score-chip ${displayScore!=null?`s${displayScore}`:''}`;
+    chip.textContent = displayScore == null ? '—' : displayScore;
+  }
+  const band = card.querySelector('.result-score-band');
+  if (band) band.textContent = getScoreBandLabel(displayScore);
+  card.querySelectorAll('.inline-score-btn').forEach(btn => {
+    const score = parseInt(btn.textContent, 10);
+    btn.classList.toggle('active', displayScore === score);
+  });
+}
+
+function rateHybrid(ri, score, scoreType, event) {
+  event?.stopPropagation();
+  const q = modeQueries()[currentIdx];
+  const r = q.results.filter(x => x.url)[ri];
+  if (!r) return;
+  // 같은 버튼 다시 클릭하면 해제
+  if (r.score === score && r.scoreType === scoreType) {
+    r.score = null; r.scoreType = null;
+  } else {
+    r.score = score;
+    r.scoreType = scoreType;
+  }
+  renderTextQuery(currentIdx);
+  updateStats();
+  saveState();
+}
+
+function rateTextDirect(ri, score, event) {
+  event?.stopPropagation();
+  const q = modeQueries()[currentIdx];
+  q.results[ri].score = q.results[ri].score === score ? null : score;
+  q.results[ri].yn = null;
+  refreshTextScoreCard(ri);
+
+  const done = isQueryDone(q, currentMode);
+  const st = document.getElementById('q-status-text');
+  if (done) { st.textContent = '평가 완료 ✓'; st.style.color = 'var(--green)'; }
+  else { st.textContent = `${q.results.filter(r=>isResultRated(r, currentMode)).length}/${q.results.length} 입력됨`; st.style.color = 'var(--amber)'; }
+
+  updateStats();
+  saveState();
+  renderSidebar();
+  showToast(`R${ri + 1} ${q.results[ri].score == null ? '점수 해제' : `${q.results[ri].score}점 저장`}`);
+}
+
+function refreshImageScoreCard(ri) {
+  const q = modeQueries()[currentIdx];
+  const r = q.results[ri];
+  const card = document.getElementById('img-rc-' + ri);
+  if (!card) return;
+  card.className = 'result-card ' + getResultCardClass(r, currentMode);
+  const chip = card.querySelector('.score-chip');
+  if (chip) {
+    chip.className = `score-chip ${r.score!=null?`s${r.score}`:''}`;
+    chip.textContent = r.score == null ? '—' : r.score;
+  }
+  const band = card.querySelector('.result-score-band');
+  if (band) band.textContent = getScoreBandLabel(r.score);
+  card.querySelectorAll('.inline-score-btn').forEach(btn => {
+    const score = parseInt(btn.textContent, 10);
+    btn.classList.toggle('active', r.score === score);
+  });
+}
+
+// 이미지 서치 종합 평가
+function rateImageOverall(score) {
+  const q = modeQueries()[currentIdx];
+  q.overallScore = q.overallScore === score ? null : score;
+
+  // guide pill 선택 상태 반영
+  const pillMap = { 2: 'cross', 1: 'partial', 0: 'none' };
+  const bgMap   = { cross: 'var(--green)', partial: 'var(--amber)', none: 'var(--red)' };
+  [0, 1, 2].forEach(s => {
+    const pill = document.getElementById(`img-score-${s}`);
+    if (!pill) return;
+    const type = pillMap[s];
+    if (q.overallScore === s) {
+      pill.style.background = bgMap[type];
+      pill.style.color = '#fff';
+      pill.style.borderColor = bgMap[type];
+      pill.querySelector('.gp-score').style.background = 'rgba(255,255,255,.3)';
+      pill.querySelector('.gp-score').style.color = '#fff';
+    } else {
+      pill.style.background = '';
+      pill.style.color = '';
+      pill.style.borderColor = '';
+      pill.querySelector('.gp-score').style.background = '';
+      pill.querySelector('.gp-score').style.color = '';
+    }
+  });
+
+  const st = document.getElementById('img-status-text');
+  if (q.overallScore != null) { st.textContent = '평가 완료 ✓'; st.style.color = 'var(--green)'; }
+  else { st.textContent = '미평가'; st.style.color = 'var(--text3)'; }
+
+  updateStats();
+  saveState();
+  renderSidebar();
+  showToast(q.overallScore == null ? '평가 해제' : `${q.overallScore}점 저장 ✓`);
+}
+
+function rateImageDirect(ri, score, event) {
+  event?.stopPropagation();
+  const q = modeQueries()[currentIdx];
+  q.results[ri].score = q.results[ri].score === score ? null : score;
+  refreshImageScoreCard(ri);
+
+  const done = isQueryDone(q, currentMode);
+  const st = document.getElementById('img-status-text');
+  if (done) { st.textContent = '평가 완료 ✓'; st.style.color = 'var(--green)'; }
+  else { st.textContent = `${q.results.filter(r=>isResultRated(r, currentMode)).length}/${q.results.length} 입력됨`; st.style.color = 'var(--amber)'; }
+
+  updateStats();
+  saveState();
+  renderSidebar();
+  showToast(`R${ri + 1} ${q.results[ri].score == null ? '점수 해제' : `${q.results[ri].score}점 저장`}`);
+}
+
+// ══════════════════════════════════════════
+//  하이브리드 추가 입력 저장
+// ══════════════════════════════════════════
+function saveImageExtra() {
+  if (!isImageMode()) return;
+  saveState();
+}
+
+// ══════════════════════════════════════════
+//  통계 패널
+// ══════════════════════════════════════════
+function updateStats() {
+  const qs    = modeQueries();
+  const done  = qs.filter(q => isQueryDone(q, currentMode));
+  const total = qs.length;
+  const pct   = total === 0 ? 0 : Math.round(done.length / total * 100);
+
+  document.getElementById('st-done').textContent   = done.length;
+  document.getElementById('st-remain').textContent = total - done.length;
+  document.getElementById('st-pct').textContent    = pct + '%';
+  document.getElementById('hdr-done').textContent  = done.length;
+  document.getElementById('hdr-prog').style.width  = pct + '%';
+
+  const body         = document.getElementById('stats-scores-body');
+  const breakdownSection = document.getElementById('type-breakdown');
+  const breakdownTitle   = document.getElementById('breakdown-title');
+  const scoresSection    = document.getElementById('stats-scores-section');
+
+  // ── 이미지 서치: 2/1/0 비율
+  if (isImageMode()) {
+    scoresSection.style.display = 'none';
+    breakdownTitle.textContent = '점수 분포';
+
+    const scored = qs.filter(q => q.overallScore != null);
+    const c2 = scored.filter(q => q.overallScore === 2).length;
+    const c1 = scored.filter(q => q.overallScore === 1).length;
+    const c0 = scored.filter(q => q.overallScore === 0).length;
+    const n  = scored.length || 1;
+
+    breakdownSection.innerHTML = [
+      { label: '활용 가능 (2점)', count: c2, color: 'var(--green)', pct: c2/n },
+      { label: '보통 (1점)',      count: c1, color: 'var(--amber)', pct: c1/n },
+      { label: '활용 불가 (0점)', count: c0, color: 'var(--red)',   pct: c0/n },
+    ].map(r => `
+      <div style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span class="stat-name">${r.label}</span>
+          <span class="stat-num" style="color:${r.color}">${scored.length===0?'—':Math.round(r.pct*100)+'%'}</span>
+        </div>
+        <div class="mini-bar-wrap">
+          <div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${Math.round(r.pct*100)}%;background:${r.color}"></div></div>
+        </div>
+      </div>`).join('');
+    return;
+  }
+
+  // ── 텍스트 서치: 2/1/0 비율
+  scoresSection.style.display = 'none';
+  breakdownTitle.textContent = '점수 분포';
+  const allR = qs.flatMap(q => q.results.filter(r => r.url));
+  const sc = allR.filter(r => r.score != null);
+  const n = sc.length || 1;
+  const c2 = sc.filter(r => r.score===2).length;
+  const c1 = sc.filter(r => r.score===1).length;
+  const c0 = sc.filter(r => r.score===0).length;
+  breakdownSection.innerHTML = [
+    { label:'활용 가능 (2점)', pct:c2/n, color:'var(--green)' },
+    { label:'보통 (1점)',      pct:c1/n, color:'var(--amber)' },
+    { label:'활용 불가 (0점)', pct:c0/n, color:'var(--red)'   },
+  ].map(r=>`<div style="margin-bottom:10px;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+      <span class="stat-name">${r.label}</span>
+      <span class="stat-num" style="color:${r.color}">${sc.length===0?'—':Math.round(r.pct*100)+'%'}</span>
+    </div>
+    <div class="mini-bar-wrap"><div class="mini-bar-bg"><div class="mini-bar-fill" style="width:${Math.round(r.pct*100)}%;background:${r.color}"></div></div></div>
+  </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+//  Nav
+// ══════════════════════════════════════════
+function goQuery(idx) { renderQuery(idx); }
+function createBlankImageQuery(num) {
+  const nextNum = num ?? (modeQueries().length + 1);
+  const inputId = `IMG_${String(nextNum).padStart(3,'0')}`;
+  return {
+    id: nextNum,
+    label: inputId,
+    scenario: '이미지 교차',
+    inputId,
+    mixRatio: null,
+    silhouette: null,
+    colorMat: null,
+    note: '',
+    inputUrl: null,
+    results: makeImageDummyResults(),
+  };
+}
+
+function nextQuery() {
+  if (currentIdx < modeQueries().length - 1) renderQuery(currentIdx + 1);
+}
+
+function addNextQuery() {
+  if (isImageMode()) {
+    modeData().queries.push(createBlankImageQuery());
+  } else {
+    const newIdx = modeQueries().length + 1;
+    modeData().queries.push({ id: newIdx, text: '', inputId: `TXT_${String(newIdx).padStart(3,'0')}`, placeholder: '', type: '단일', attrs: 0, isExample: false, results: [] });
+  }
+  renderSidebar();
+  updateStats();
+  renderQuery(modeData().queries.length - 1);
+  saveState();
+  showToast('새 항목이 추가됐어요');
+}
+function prevQuery()  { if (currentIdx > 0) renderQuery(currentIdx-1); }
+
+// ══════════════════════════════════════════
+//  쿼리 추가 (텍스트 모드 전용)
+// ══════════════════════════════════════════
+function openAddQuery() {
+  const isImage   = isImageMode();
+  const isHybrid = false;
+
+  document.getElementById('add-modal-title').textContent = isImage ? '평가 항목 추가' : '항목 추가';
+  document.getElementById('new-query-text-label').textContent = isImage ? '평가 항목 메모' : '테스트 쿼리';
+  document.getElementById('text-type-field').style.display = (isImage || isHybrid) ? 'none' : 'block';
+  document.getElementById('text-urls-field').style.display = isImage ? 'none' : 'block';
+  document.getElementById('image-add-fields').style.display = isImage ? 'block' : 'none';
+
+  const input = document.getElementById('new-query-text');
+  if (input) {
+    input.placeholder = isHybrid
+      ? '예: floral, chiffon / oversized, cotton, shirring at sleeve'
+      : '예: shirring at skirt / runching';
+  }
+
+  // 현재 모드에 맞게 유형 드롭다운 갱신
+  const sel = document.getElementById('new-query-type');
+  if (!isImage) {
+    sel.innerHTML = modeData().typeOptions.map(t =>
+      `<option value="${t}">${modeData().typeLabels?.[t] || t}</option>`
+    ).join('');
+  }
+  document.getElementById('add-modal').classList.add('open');
+  (isImage ? document.getElementById('new-image-label') : document.getElementById('new-query-text')).focus();
+}
+
+function closeModal() {
+  document.getElementById('add-modal').classList.remove('open');
+  pendingImageInputUrl = '';
+}
+
+function addQuery() {
+  if (isImageMode()) {
+    const label = document.getElementById('new-image-label').value.trim() || document.getElementById('new-query-text').value.trim();
+    const inputId = document.getElementById('new-image-input-id').value.trim() || `IMG_${String(modeQueries().length + 1).padStart(3,'0')}`;
+    const scenario = document.getElementById('new-image-scenario').value;
+    const newQ = {
+      id: modeQueries().length + 1,
+      label: label || inputId,
+      scenario,
+      inputId,
+      mixRatio: null,
+      silhouette: null,
+      colorMat: null,
+      note: '',
+      inputUrl: pendingImageInputUrl || null,
+      results: makeImageDummyResults(),
+    };
+    modeData().queries.push(newQ);
+    document.getElementById('new-query-text').value = '';
+    document.getElementById('new-image-label').value = '';
+    document.getElementById('new-image-input-id').value = '';
+    document.getElementById('new-image-scenario').value = '이미지 교차';
+    document.getElementById('new-image-file').value = '';
+    pendingImageInputUrl = '';
+    closeModal();
+    renderSidebar();
+    updateStats();
+    goQuery(modeData().queries.length - 1);
+    saveState();
+    showToast('평가 항목 추가 완료');
+    return;
+  }
+
+  const text = document.getElementById('new-query-text').value.trim();
+  if (!text) return;
+  const type = document.getElementById('new-query-type').value;
+  const urlsRaw = document.getElementById('new-query-urls').value.trim();
+  const urls = urlsRaw ? urlsRaw.split('\n').map(u=>u.trim()).filter(Boolean) : [];
+  const results = Array.from({length:10}, (_, i) => ({
+    id: `R${i+1}`,
+    url: urls[i] || null,
+    score: null,
+    yn: null
+  }));
+  const newIdx = modeQueries().length + 1;
+  const newQ = { id: newIdx, text, inputId: `TXT_${String(newIdx).padStart(3,'0')}`, type, attrs: text.split(/\s+/).length, results };
+  modeData().queries.push(newQ);
+  document.getElementById('new-query-text').value = '';
+  document.getElementById('new-query-urls').value = '';
+  closeModal();
+  renderSidebar();
+  updateStats();
+  goQuery(modeData().queries.length - 1);
+  saveState();
+  showToast('항목 추가 완료');
+}
+
+// ══════════════════════════════════════════
+//  엑셀 내보내기
+// ══════════════════════════════════════════
+const GREEN_XLSX = '375623';
+
+function buildExportRows() {
+  const isImage = isImageMode();
+  const qs = modeQueries();
+
+  if (isImage) {
+    const header = ['번호', '입력ID', '종합 점수', '코멘트'];
+    const rows = qs.map((q, i) => {
+      return [i+1, q.inputId, q.overallScore ?? '', q.comment || ''];
+    });
+    return [header, ...rows];
+  }
+
+  // 텍스트 서치
+  const header = ['번호', '입력ID', '검색어', 'R1','R2','R3','R4','R5','R6','R7','R8','R9','R10', '코멘트'];
+  const rows = qs.map((q, i) => {
+    return [
+      i+1, q.inputId || `TXT_${String(i+1).padStart(3,'0')}`, q.text || '',
+      ...Array.from({length:10}, (_, ri) => {
+        const score = q.results[ri] ? getResultDecision(q.results[ri], currentMode) : null;
+        return score ?? '';
+      }),
+      q.comment || ''
+    ];
+  });
+  return [header, ...rows];
+}
+
+function downloadXLSX() {
+  if (typeof XLSX === 'undefined') { showToast('XLSX 라이브러리 로딩 중...'); return; }
+  const rows = buildExportRows();
+  const ws   = XLSX.utils.aoa_to_sheet(rows);
+  const hLen = rows[0].length;
+
+  // 헤더 스타일
+  for (let c = 0; c < hLen; c++) {
+    const addr = XLSX.utils.encode_cell({r:0, c});
+    if (ws[addr]) ws[addr].s = {
+      font: { bold:true, color:{rgb:'FFFFFF'}, sz:10 },
+      fill: { fgColor:{rgb:'1F4E79'} },
+      alignment: { horizontal:'center', vertical:'center' }
+    };
+  }
+
+  // 점수 셀 스타일
+  modeQueries().forEach((q, ri) => {
+    const r = ri + 1;
+    if (isImageMode()) {
+      // 이미지: 종합점수 열(C)
+      const addr = XLSX.utils.encode_cell({r, c: 2});
+      if (ws[addr] && ws[addr].v !== '') {
+        const v = ws[addr].v;
+        const palette = v === '활용 가능' ? {font:'1a7a3a', fill:'E2EFDA'} : v === '보통' ? {font:'7F6000', fill:'FFF2CC'} : {font:'8a1a1a', fill:'FFE0E0'};
+        ws[addr].s = { alignment:{horizontal:'center'}, font:{bold:true, sz:9, color:{rgb:palette.font}}, fill:{fgColor:{rgb:palette.fill}} };
+      }
+    } else {
+      // 텍스트: R1~R10 열(3~12)
+      for (let c = 3; c <= 12; c++) {
+        const addr = XLSX.utils.encode_cell({r, c});
+        if (!ws[addr] || ws[addr].v === '') continue;
+        const v = ws[addr].v;
+        const palette = v === '활용 가능' ? {font:'1a7a3a', fill:'E2EFDA'} : v === '보통' ? {font:'7F6000', fill:'FFF2CC'} : v === '활용 불가' ? {font:'8a1a1a', fill:'FFE0E0'} : {font:'555a68', fill:'FFFFFF'};
+        ws[addr].s = { alignment:{horizontal:'center'}, font:{bold:true, sz:9, color:{rgb:palette.font}}, fill:{fgColor:{rgb:palette.fill}} };
+      }
+    }
+  });
+
+  ws['!cols'] = isImageMode()
+    ? [{wch:6},{wch:12},{wch:14},{wch:30}]
+    : Array.from({length: hLen}, (_, i) => ({wch: i===0?6:i===1?12:i===2?24:i<=12?10:30}));
+  ws['!rows'] = [{hpt:22}];
+
+  const sheetNames = { text_basic:'텍스트서치', image_garment:'이미지서치_가먼트', image_sketch:'이미지서치_스케치' };
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetNames[currentMode]);
+
+  const dateStr = new Date().toISOString().slice(0,10);
+  const baseName = `eval_${currentMode}_${dateStr}`;
+
+  // 이미지 수집 (입력 이미지 + 결과 이미지)
+  const allModeQueries = [
+    ...MODE_DATA.image_garment.queries,
+    ...MODE_DATA.image_sketch.queries,
+    ...MODE_DATA.text_basic.queries,
+  ];
+  const imgFiles = [];
+
+  function toUint8(dataUrl) {
+    const base64 = dataUrl.split(',')[1];
+    const binary = atob(base64);
+    const data = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) data[i] = binary.charCodeAt(i);
+    return data;
+  }
+
+  allModeQueries.forEach(q => {
+    // 입력 이미지
+    if (q.inputUrl?.startsWith('data:image')) {
+      const ext = q.inputUrl.includes('image/png') ? 'png' : 'jpg';
+      try { imgFiles.push({ name: `input_images/${q.inputId || `item_${q.id}`}.${ext}`, data: toUint8(q.inputUrl) }); }
+      catch(e) {}
+    }
+    // 결과 이미지
+    q.results?.forEach((r, ri) => {
+      if (!r.url?.startsWith('data:image')) return;
+      const ext = r.url.includes('image/png') ? 'png' : 'jpg';
+      try { imgFiles.push({ name: `result_images/${q.inputId || `item_${q.id}`}_R${ri+1}.${ext}`, data: toUint8(r.url) }); }
+      catch(e) {}
+    });
+  });
+
+  // 엑셀을 바이너리로 변환 후 ZIP에 포함
+  const xlsxBinary = XLSX.write(wb, { bookType:'xlsx', type:'array' });
+  const xlsxData = new Uint8Array(xlsxBinary);
+  const allFiles = [{ name: `${baseName}.xlsx`, data: xlsxData }, ...imgFiles];
+
+  const blob = makeZip(allFiles);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${baseName}.zip`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast(imgFiles.length > 0 ? `엑셀 + 이미지 ${imgFiles.length}개 ZIP 다운로드 완료 ✓` : '엑셀 ZIP 다운로드 완료 ✓');
+}
+
+// ══════════════════════════════════════════
+//  Toast / 키보드
+// ══════════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ══════════════════════════════════════════
+//  키보드 단축키 + Ctrl+V 붙여넣기
+// ══════════════════════════════════════════
+document.addEventListener('keydown', async e => {
+  const inInput = ['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName);
+
+  // Ctrl+V: Clipboard API로 이미지 읽기
+  if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+    if (inInput) return;
+
+    // 입력 이미지 영역이 hover 중인지 확인
+    const inputPreview = document.getElementById('img-input-preview');
+    const hybridPreview = document.getElementById('hybrid-input-preview');
+    const overInput = inputPreview?.matches(':hover') || hybridPreview?.matches(':hover');
+
+    if (!overInput) {
+      const dz = getActiveDropzone();
+      if (dz) { dz.style.borderColor = 'var(--accent)'; dz.style.background = 'var(--tag-bg)'; }
+    }
+
+    try {
+      const items = await navigator.clipboard.read();
+      let found = false;
+      for (const item of items) {
+        const imgType = item.types.find(t => t.startsWith('image/'));
+        if (imgType) {
+          const blob = await item.getType(imgType);
+          const file = new File([blob], 'paste.png', { type: imgType });
+          if (overInput) {
+            // 입력 이미지로 붙여넣기
+            const reader = new FileReader();
+            reader.onload = ev => {
+              const q = modeQueries()[currentIdx];
+              q.inputUrl = ev.target.result;
+              if (isImageMode()) renderImageQuery(currentIdx);
+              else {
+                const preview = document.getElementById('hybrid-input-preview');
+                if (preview) preview.innerHTML = `<img src="${q.inputUrl}" style="width:100%;height:100%;object-fit:contain;background:#fff;">`;
+              }
+              saveState();
+              showToast('입력 이미지 붙여넣기 완료 ✓');
+            };
+            reader.readAsDataURL(file);
+          } else {
+            processFiles([file], true);
+          }
+          found = true;
+          break;
+        }
+      }
+      if (!found) showToast('클립보드에 이미지가 없어요');
+    } catch {
+      showToast('붙여넣기 권한 필요 — 주소창 자물쇠 → 클립보드 허용');
+    } finally {
+      const dz = getActiveDropzone();
+      if (dz) setTimeout(() => { dz.style.borderColor='var(--border2)'; dz.style.background='transparent'; }, 500);
+    }
+    return;
+  }
+
+  // 나머지 단축키 (input 내에선 무시)
+  if (inInput) return;
+  if (e.key === 'ArrowRight') nextQuery();
+  if (e.key === 'ArrowLeft')  prevQuery();
+});
+
+document.getElementById('add-modal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeModal();
+});
+document.getElementById('text-query-input')?.addEventListener('input', saveCurrentTextQueryText);
+document.getElementById('text-query-input')?.addEventListener('change', saveCurrentTextQueryText);
+document.getElementById('new-image-file')?.addEventListener('change', e => {
+  const file = e.target.files?.[0];
+  if (!file) { pendingImageInputUrl = ''; return; }
+  const reader = new FileReader();
+  reader.onload = ev => { pendingImageInputUrl = ev.target.result; };
+  reader.readAsDataURL(file);
+});
+function handleCurrentInputImage(event) {
+  const file = event.target.files?.[0];
+  if (!file || !isImageMode()) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const q = modeQueries()[currentIdx];
+    q.inputUrl = ev.target.result;
+    renderImageQuery(currentIdx);
+    saveState();
+    showToast('입력 이미지가 업데이트됐어요');
+  };
+  reader.readAsDataURL(file);
+  event.target.value = '';
+}
+
+// 하이브리드: 입력 이미지 드롭
+function handleHybridImageDrop(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const preview = document.getElementById('hybrid-input-preview');
+  if (preview) { preview.style.borderColor = 'var(--border2)'; preview.style.background = 'var(--bg3)'; }
+  if (currentMode !== 'text_hybrid') return;
+  const file = event.dataTransfer?.files?.[0];
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const q = modeQueries()[currentIdx];
+    q.inputUrl = e.target.result;
+    if (preview) preview.innerHTML = `<img src="${q.inputUrl}" style="width:100%;height:100%;object-fit:contain;background:#fff;">`;
+    saveState();
+    showToast('입력 이미지 업로드 완료 ✓');
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearHybridImage() {
+  if (currentMode !== 'text_hybrid') return;
+  const q = modeQueries()[currentIdx];
+  q.inputUrl = null;
+  const preview = document.getElementById('hybrid-input-preview');
+  if (preview) preview.innerHTML = `<span style="font-size:18px;opacity:.3;">🖼</span>`;
+  saveState();
+  showToast('입력 이미지를 삭제했어요');
+}
+
+function handleInputImageFile(event) {
+  const file = event.target.files?.[0];
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const q = modeQueries()[currentIdx];
+    q.inputUrl = ev.target.result;
+    const preview = document.getElementById('img-input-preview');
+    if (preview) preview.innerHTML = `<img src="${q.inputUrl}" style="width:100%;height:100%;object-fit:contain;background:#fff;">`;
+    saveState();
+    event.target.value = '';
+    showToast('입력 이미지 업로드 완료 ✓');
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleInputImageDrop(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const preview = document.getElementById('img-input-preview');
+  if (preview) { preview.style.borderColor = 'var(--border2)'; preview.style.background = 'var(--bg3)'; }
+  const file = event.dataTransfer?.files?.[0];
+  if (!file || !file.type.startsWith('image/')) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const q = modeQueries()[currentIdx];
+    q.inputUrl = ev.target.result;
+    renderImageQuery(currentIdx);
+    saveState();
+    saveInputUrls();
+      showToast('입력 이미지 업로드 완료 ✓');
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearCurrentInputImage() {
+  if (!isImageMode()) return;
+  const q = modeQueries()[currentIdx];
+  q.inputUrl = null;
+  renderImageQuery(currentIdx);
+  saveState();
+  showToast('입력 이미지를 삭제했어요');
+}
+
+function clearCurrentResults() {
+  const q = modeQueries()[currentIdx];
+  q.results = [];
+  if (isImageMode()) q.overallScore = null;
+  renderQuery(currentIdx);
+  updateStats();
+  saveState();
+  showToast('결과 이미지와 점수를 초기화했어요');
+}
+
+// 페이지 전체 드래그&드롭 (드롭존 밖에 놓아도 동작)
+document.addEventListener('dragover', e => {
+  e.preventDefault();
+  if (isImageMode()) return;
+  const dz = getActiveDropzone();
+  if (dz) { dz.style.borderColor = 'var(--accent)'; dz.style.background = 'var(--tag-bg)'; }
+});
+
+document.addEventListener('dragleave', e => {
+  if (isImageMode()) return;
+  if (e.relatedTarget) return; // 페이지 밖으로 나갔을 때만
+  const dz = getActiveDropzone();
+  if (dz) { dz.style.borderColor = 'var(--border2)'; dz.style.background = 'transparent'; }
+});
+
+document.addEventListener('drop', e => {
+  e.preventDefault();
+  // img-input-preview 영역이면 입력 이미지로 처리
+  const preview = document.getElementById('img-input-preview');
+  if (preview) {
+    const r = preview.getBoundingClientRect();
+    if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+      const file = e.dataTransfer?.files?.[0];
+      if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = ev => {
+          const q = modeQueries()[currentIdx];
+          q.inputUrl = ev.target.result;
+          preview.innerHTML = `<img src="${q.inputUrl}" style="width:100%;height:100%;object-fit:contain;background:#fff;">`;
+          saveState();
+          showToast('입력 이미지 업로드 완료 ✓');
+        };
+        reader.readAsDataURL(file);
+      }
+      return;
+    }
+  }
+  const insideDropzone = e.target.closest('#dropzone, #img-dropzone, #hybrid-input-preview');
+  if (insideDropzone) return;
+  const files = e.dataTransfer?.files;
+  if (files?.length) processFiles(files, files.length === 1);
+});
+
+// ══════════════════════════════════════════
+//  격자 분할 & 드롭존
+// ══════════════════════════════════════════
+
+// 덮어쓰기 (단일)
+function processScreenshot(file) {
+  if (!file) return;
+  readImageFile(file, img => {
+    const count = splitImageIntoGrid(img, false);
+    const dz = getActiveDropzone();
+    if (dz) { dz.style.borderColor = 'var(--border2)'; dz.style.background = 'transparent'; }
+    if (isImageMode()) renderImageQuery(currentIdx);
+    else renderTextQuery(currentIdx);
+    saveState();
+    showToast(`✂ ${count}개 분할 완료 ✓`);
+  });
+}
+
+// 여러 파일 순서대로 append
+function processFiles(files, startFresh) {
+  const arr = Array.from(files)
+    .filter(f => f.type.startsWith('image/'))
+    .sort((a, b) => a.lastModified - b.lastModified);
+  if (!arr.length) return;
+  if (startFresh) modeQueries()[currentIdx].results = [];
+  let i = 0;
+  function next() {
+    if (i >= arr.length) {
+      if (isImageMode()) renderImageQuery(currentIdx);
+      else renderTextQuery(currentIdx);
+      saveState();
+      const total = modeQueries()[currentIdx].results.length;
+      showToast(`✂ ${total}개 분할 완료 ✓`);
+      const dz = getActiveDropzone();
+      if (dz) { dz.style.borderColor = 'var(--border2)'; dz.style.background = 'transparent'; }
+      return;
+    }
+    readImageFile(arr[i++], img => { splitImageIntoGrid(img, true); next(); });
+  }
+  next();
+}
+
+function readImageFile(file, cb) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      if (!img.naturalWidth || !img.naturalHeight) { showToast('이미지 크기를 읽을 수 없어요'); return; }
+      cb(img);
+    };
+    img.onerror = () => showToast('이미지 로드 실패');
+    img.src = e.target.result;
+  };
+  reader.onerror = () => showToast('파일 읽기 실패');
+  reader.readAsDataURL(file);
+}
+
+// 드롭존: 파일 선택
+function handleDropzoneFile(event) {
+  const files = event.target.files;
+  if (files?.length) processFiles(files, true);
+  event.target.value = '';
+}
+
+// 드롭존: 드롭 (1개 → 덮어쓰기, 2개 이상 → 이어붙이기)
+function smartDrop(event) {
+  event.preventDefault();
+  event.stopPropagation();
+
+  const preview = document.getElementById('img-input-preview');
+  if (preview) {
+    const r = preview.getBoundingClientRect();
+    if (event.clientX >= r.left && event.clientX <= r.right &&
+        event.clientY >= r.top  && event.clientY <= r.bottom) {
+      const file = event.dataTransfer?.files?.[0];
+      if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = ev => {
+          const q = modeQueries()[currentIdx];
+          q.inputUrl = ev.target.result;
+          preview.innerHTML = `<img src="${q.inputUrl}" style="width:100%;height:100%;object-fit:contain;background:#fff;">`;
+          saveState();
+          showToast('입력 이미지 업로드 완료 ✓');
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+    }
+  }
+  // 입력 이미지 아닌 경우 → 결과 이미지
+  handleDrop(event);
+}
+
+function handleDrop(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const files = event.dataTransfer?.files;
+  if (!files?.length) return;
+  processFiles(files, files.length === 1);
+}
+
+// ── 순수 JS ZIP 생성 (외부 라이브러리 없음) ──
+function makeZip(files) {
+  const enc = new TextEncoder();
+  const parts = [];
+  const central = [];
+  let offset = 0;
+
+  const crcTable = (() => {
+    const t = new Uint32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let j = 0; j < 8; j++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[i] = c >>> 0;
+    }
+    return t;
+  })();
+
+  function crc32(buf) {
+    let c = 0xFFFFFFFF;
+    for (let i = 0; i < buf.length; i++) c = crcTable[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ 0xFFFFFFFF) >>> 0;
+  }
+
+  function pushU16(arr, n) {
+    arr.push(n & 0xFF, (n >>> 8) & 0xFF);
+  }
+
+  function pushU32(arr, n) {
+    arr.push(n & 0xFF, (n >>> 8) & 0xFF, (n >>> 16) & 0xFF, (n >>> 24) & 0xFF);
+  }
+
+  files.forEach(({ name, data }) => {
+    const nameBytes = enc.encode(name);
+    const crc = crc32(data);
+
+    const local = [];
+    pushU32(local, 0x04034B50);
+    pushU16(local, 20);
+    pushU16(local, 0);
+    pushU16(local, 0);
+    pushU16(local, 0);
+    pushU16(local, 0);
+    pushU32(local, crc);
+    pushU32(local, data.length);
+    pushU32(local, data.length);
+    pushU16(local, nameBytes.length);
+    pushU16(local, 0);
+    local.push(...nameBytes, ...data);
+
+    const localBytes = new Uint8Array(local);
+    parts.push(localBytes);
+
+    const dir = [];
+    pushU32(dir, 0x02014B50);
+    pushU16(dir, 20);
+    pushU16(dir, 20);
+    pushU16(dir, 0);
+    pushU16(dir, 0);
+    pushU16(dir, 0);
+    pushU16(dir, 0);
+    pushU32(dir, crc);
+    pushU32(dir, data.length);
+    pushU32(dir, data.length);
+    pushU16(dir, nameBytes.length);
+    pushU16(dir, 0);
+    pushU16(dir, 0);
+    pushU16(dir, 0);
+    pushU16(dir, 0);
+    pushU32(dir, 0);
+    pushU32(dir, offset);
+    dir.push(...nameBytes);
+
+    const dirBytes = new Uint8Array(dir);
+    central.push(dirBytes);
+    offset += localBytes.length;
+  });
+
+  const cdOffset = offset;
+  const cdSize = central.reduce((sum, part) => sum + part.length, 0);
+  parts.push(...central);
+
+  const eocd = [];
+  pushU32(eocd, 0x06054B50);
+  pushU16(eocd, 0);
+  pushU16(eocd, 0);
+  pushU16(eocd, files.length);
+  pushU16(eocd, files.length);
+  pushU32(eocd, cdSize);
+  pushU32(eocd, cdOffset);
+  pushU16(eocd, 0);
+  parts.push(new Uint8Array(eocd));
+
+  return new Blob(parts, { type: 'application/zip' });
+}
+
+// 분할 이미지 R1~R10 ZIP으로 다운로드
+function downloadResultImages() {
+  const q = modeQueries()[currentIdx];
+  const imgs = q.results.filter(r => r.url?.startsWith('data:image'));
+  if (!imgs.length) { showToast('다운로드할 이미지가 없어요'); return; }
+
+  const baseLabel = q.label || q.text || q.inputId || `query_${currentIdx+1}`;
+  const qLabel = baseLabel.replace(/\s+/g, '_').replace(/[^\w가-힣_]/g, '') || 'query';
+  const pageLabel = `Q${String(currentIdx + 1).padStart(2, '0')}_${qLabel}`;
+
+  const files = imgs.map((r, i) => {
+    const base64 = r.url.split(',')[1];
+    const binary = atob(base64);
+    const data   = new Uint8Array(binary.length);
+    for (let j = 0; j < binary.length; j++) data[j] = binary.charCodeAt(j);
+    const ext = r.url.includes('image/png') ? 'png' : 'jpg';
+    const resultLabel = (r.id || `R${i + 1}`).replace(/\s+/g, '_').replace(/[^\w가-힣_]/g, '') || `R${i + 1}`;
+    return { name: `${pageLabel}_${resultLabel}.${ext}`, data };
+  });
+
+  const blob = makeZip(files);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${pageLabel}_images.zip`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+  showToast(`↓ ${imgs.length}개 이미지 ZIP 다운로드 완료`);
+}
+
+function splitImageIntoGrid(imgEl, append = false) {
+  const { cols, rows, padding } = getActiveGridConfig();
+  const count  = cols * rows;
+  const cellW  = imgEl.width  / cols;
+  const cellH  = imgEl.height / rows;
+  const q      = modeQueries()[currentIdx];
+
+  if (!append) q.results = [];
+  const startIdx = q.results.length;
+
+  for (let i = 0; i < count; i++) {
+    const col    = i % cols;
+    const row    = Math.floor(i / cols);
+    const canvas = document.createElement('canvas');
+    canvas.width  = Math.max(1, cellW  - padding * 2);
+    canvas.height = Math.max(1, cellH  - padding * 2);
+    canvas.getContext('2d').drawImage(
+      imgEl,
+      col * cellW + padding, row * cellH + padding,
+      canvas.width, canvas.height,
+      0, 0, canvas.width, canvas.height
+    );
+    const isHybrid = false;
+    q.results.push({
+      id:       `R${startIdx + i + 1}`,
+      url:      canvas.toDataURL('image/jpeg', 0.92),
+      score:    null,
+      yn:       null,
+      imgMatch: isHybrid ? null : undefined,
+      txtMatch: isHybrid ? null : undefined,
+    });
+  }
+  return count;
+}
+
+function handleScreenshotUpload(event) {
+  const files = event.target.files;
+  if (files?.length) processFiles(files, files.length === 1);
+  event.target.value = '';
+}
+
+// ══════════════════════════════════════════
+//  초기화
+// ══════════════════════════════════════════
+// ══════════════════════════════════════════
+//  구글 시트 제출
+// ══════════════════════════════════════════
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbw6F2J6XuEdn3tq-bgG8LsksxLazAsrFvP9c9vIQLg_EQpvjM7t3sp5T7DC0v4zCtCc/exec';
+
+async function submitToSheets() {
+  const mode = currentMode;
+  const rows = buildExportRows();
+  if (rows.length <= 1) { showToast('제출할 데이터가 없어요'); return; }
+
+  showToast('구글 시트에 제출 중...');
+
+  try {
+    const payload = JSON.stringify({ mode, rows });
+    const url = SHEETS_URL + '?data=' + encodeURIComponent(payload);
+
+    await new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = url + '&callback=sheetsCallback';
+      window.sheetsCallback = (res) => {
+        delete window.sheetsCallback;
+        document.body.removeChild(script);
+        if (res.status === 'ok') resolve();
+        else reject(new Error(res.message));
+      };
+      script.onerror = () => { document.body.removeChild(script); reject(new Error('network error')); };
+      document.body.appendChild(script);
+      setTimeout(() => { try { document.body.removeChild(script); } catch(e) {} reject(new Error('timeout')); }, 10000);
+    });
+
+    showToast('구글 시트 제출 완료 ✓');
+  } catch(e) {
+    console.error(e);
+    showToast('제출 실패: ' + e.message);
+  }
+}
+
+function init() {
+  MODE_DATA.image_garment.queries = [];
+  MODE_DATA.image_sketch.queries = [];
+
+  const restored = loadState();
+  loadInputUrls();
+
+  if (MODE_DATA.image_garment.queries.length === 0) MODE_DATA.image_garment.queries = [createBlankImageQuery(1)];
+  if (MODE_DATA.image_sketch.queries.length === 0) MODE_DATA.image_sketch.queries = [createBlankImageQuery(1)];
+
+  document.querySelectorAll('.mode-tab').forEach((t, i) => {
+    t.classList.toggle('active', ['text_basic','image_garment','image_sketch'][i] === currentMode);
+  });
+
+  const isImage = isImageMode();
+  document.getElementById('main-text').style.display  = isImage ? 'none' : 'flex';
+  document.getElementById('main-image').style.display = isImage ? 'flex'  : 'none';
+  document.getElementById('sidebar-label').textContent = MODE_DATA[currentMode].sidebarLabel;
+
+  renderSidebar();
+  renderQuery(currentIdx);
+  updateStats();
+
+  if (restored) showToast('이전 평가 내용이 복원됐어요 ✓');
+}
+
+// ══════════════════════════════════════════
+//  초기화는 상단에서 정의됨
+// ══════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
