@@ -1416,13 +1416,13 @@ function saveState() {
       currentIdx,
       modeData: {
         text_basic:  { queries: MODE_DATA.text_basic.queries.map(q => ({
-          ...q, results: q.results.map(r => ({ id: r.id, score: r.score, yn: r.yn }))
+          ...q, results: q.results.map(r => ({ id: r.id, score: r.score, yn: r.yn, url: r.url || null }))
         }))},
         image_garment: { queries: MODE_DATA.image_garment.queries.map(q => ({
-          ...q, overallScore: q.overallScore ?? null, results: q.results.map(r => ({ id: r.id, score: r.score, yn: r.yn, url: IS_ADMIN ? (r.url || null) : undefined }))
+          ...q, overallScore: q.overallScore ?? null, results: q.results.map(r => ({ id: r.id, score: r.score, yn: r.yn, url: r.url || null }))
         }))},
         image_sketch: { queries: MODE_DATA.image_sketch.queries.map(q => ({
-          ...q, overallScore: q.overallScore ?? null, results: q.results.map(r => ({ id: r.id, score: r.score, yn: r.yn, url: IS_ADMIN ? (r.url || null) : undefined }))
+          ...q, overallScore: q.overallScore ?? null, results: q.results.map(r => ({ id: r.id, score: r.score, yn: r.yn, url: r.url || null }))
         }))},
       }
     };
