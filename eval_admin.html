@@ -3179,6 +3179,9 @@ function init() {
         MODE_DATA[mode].queries = PRESET_DATA[mode].queries;
       }
     });
+    // 항상 텍스트 서치 탭부터 시작
+    currentMode = 'text_basic';
+    currentIdx = 0;
   }
 
   document.querySelectorAll('.mode-tab').forEach((t, i) => {
