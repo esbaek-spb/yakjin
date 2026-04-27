@@ -2429,85 +2429,47 @@ function addQuery() {
 // ══════════════════════════════════════════
 const GREEN_XLSX = '375623';
 
-function buildExportRows() {
-  const isImage = isImageMode();
-  const qs = modeQueries();
+function buildRowsForMode(mode) {
+  const qs = MODE_DATA[mode].queries;
+  const isImage = mode !== 'text_basic';
 
   if (isImage) {
     const header = ['번호', '입력ID', '종합 점수', '코멘트'];
-    const rows = qs.map((q, i) => {
-      return [i+1, q.inputId, q.overallScore ?? '', q.comment || ''];
-    });
+    const rows = qs.map((q, i) => [i+1, q.inputId, q.overallScore ?? '', q.comment || '']);
     return [header, ...rows];
   }
 
-  // 텍스트 서치
-  const header = ['번호', '입력ID', '검색어', 'R1','R2','R3','R4','R5','R6','R7','R8','R9','R10', '코멘트'];
-  const rows = qs.map((q, i) => {
-    return [
-      i+1, q.inputId || `TXT_${String(i+1).padStart(3,'0')}`, q.text || '',
-      ...Array.from({length:10}, (_, ri) => {
-        const score = q.results[ri] ? getResultDecision(q.results[ri], currentMode) : null;
-        return score ?? '';
-      }),
-      q.comment || ''
-    ];
-  });
+  const header = ['번호', '입력ID', '검색어', 'R1','R2','R3','R4','R5','R6','R7','R8','R9','R10','R11','R12','R13','R14','R15','R16','R17','R18','R19','R20', '코멘트'];
+  const rows = qs.map((q, i) => [
+    i+1, q.inputId || `TXT_${String(i+1).padStart(3,'0')}`, q.text || '',
+    ...Array.from({length:20}, (_, ri) => {
+      const score = q.results[ri] ? getResultDecision(q.results[ri], mode) : null;
+      return score ?? '';
+    }),
+    q.comment || ''
+  ]);
   return [header, ...rows];
 }
 
 function downloadXLSX() {
   if (typeof XLSX === 'undefined') { showToast('XLSX 라이브러리 로딩 중...'); return; }
-  const rows = buildExportRows();
-  const ws   = XLSX.utils.aoa_to_sheet(rows);
-  const hLen = rows[0].length;
 
-  // 헤더 스타일
-  for (let c = 0; c < hLen; c++) {
-    const addr = XLSX.utils.encode_cell({r:0, c});
-    if (ws[addr]) ws[addr].s = {
-      font: { bold:true, color:{rgb:'FFFFFF'}, sz:10 },
-      fill: { fgColor:{rgb:'1F4E79'} },
-      alignment: { horizontal:'center', vertical:'center' }
-    };
-  }
-
-  // 점수 셀 스타일
-  modeQueries().forEach((q, ri) => {
-    const r = ri + 1;
-    if (isImageMode()) {
-      // 이미지: 종합점수 열(C)
-      const addr = XLSX.utils.encode_cell({r, c: 2});
-      if (ws[addr] && ws[addr].v !== '') {
-        const v = ws[addr].v;
-        const palette = v === '활용 가능' ? {font:'1a7a3a', fill:'E2EFDA'} : v === '보통' ? {font:'7F6000', fill:'FFF2CC'} : {font:'8a1a1a', fill:'FFE0E0'};
-        ws[addr].s = { alignment:{horizontal:'center'}, font:{bold:true, sz:9, color:{rgb:palette.font}}, fill:{fgColor:{rgb:palette.fill}} };
-      }
-    } else {
-      // 텍스트: R1~R10 열(3~12)
-      for (let c = 3; c <= 12; c++) {
-        const addr = XLSX.utils.encode_cell({r, c});
-        if (!ws[addr] || ws[addr].v === '') continue;
-        const v = ws[addr].v;
-        const palette = v === '활용 가능' ? {font:'1a7a3a', fill:'E2EFDA'} : v === '보통' ? {font:'7F6000', fill:'FFF2CC'} : v === '활용 불가' ? {font:'8a1a1a', fill:'FFE0E0'} : {font:'555a68', fill:'FFFFFF'};
-        ws[addr].s = { alignment:{horizontal:'center'}, font:{bold:true, sz:9, color:{rgb:palette.font}}, fill:{fgColor:{rgb:palette.fill}} };
-      }
-    }
-  });
-
-  ws['!cols'] = isImageMode()
-    ? [{wch:6},{wch:12},{wch:14},{wch:30}]
-    : Array.from({length: hLen}, (_, i) => ({wch: i===0?6:i===1?12:i===2?24:i<=12?10:30}));
-  ws['!rows'] = [{hpt:22}];
-
-  const sheetNames = { text_basic:'텍스트서치', image_garment:'이미지서치_가먼트', image_sketch:'이미지서치_스케치' };
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, sheetNames[currentMode]);
+  const sheetNames = {
+    text_basic:    '텍스트서치',
+    image_garment: '이미지서치_가먼트',
+    image_sketch:  '이미지서치_스케치',
+  };
+
+  ['text_basic', 'image_garment', 'image_sketch'].forEach(mode => {
+    const rows = buildRowsForMode(mode);
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, sheetNames[mode]);
+  });
 
   const dateStr = new Date().toISOString().slice(0,10);
   const baseName = `eval_${evaluatorName ? evaluatorName + '_' : ''}${dateStr}`;
 
-  // 이미지 수집 (입력 이미지 + 결과 이미지)
   const allModeQueries = [
     ...MODE_DATA.image_garment.queries,
     ...MODE_DATA.image_sketch.queries,
@@ -2524,22 +2486,17 @@ function downloadXLSX() {
   }
 
   allModeQueries.forEach(q => {
-    // 입력 이미지
     if (q.inputUrl?.startsWith('data:image')) {
       const ext = q.inputUrl.includes('image/png') ? 'png' : 'jpg';
-      try { imgFiles.push({ name: `input_images/${q.inputId || `item_${q.id}`}.${ext}`, data: toUint8(q.inputUrl) }); }
-      catch(e) {}
+      try { imgFiles.push({ name: `input_images/${q.inputId}.${ext}`, data: toUint8(q.inputUrl) }); } catch(e) {}
     }
-    // 결과 이미지
     q.results?.forEach((r, ri) => {
       if (!r.url?.startsWith('data:image')) return;
       const ext = r.url.includes('image/png') ? 'png' : 'jpg';
-      try { imgFiles.push({ name: `result_images/${q.inputId || `item_${q.id}`}_R${ri+1}.${ext}`, data: toUint8(r.url) }); }
-      catch(e) {}
+      try { imgFiles.push({ name: `result_images/${q.inputId}_R${ri+1}.${ext}`, data: toUint8(r.url) }); } catch(e) {}
     });
   });
 
-  // 엑셀을 바이너리로 변환 후 ZIP에 포함
   const xlsxBinary = XLSX.write(wb, { bookType:'xlsx', type:'array' });
   const xlsxData = new Uint8Array(xlsxBinary);
   const allFiles = [{ name: `${baseName}.xlsx`, data: xlsxData }, ...imgFiles];
@@ -2550,8 +2507,7 @@ function downloadXLSX() {
   a.download = `${baseName}.zip`;
   a.click();
   URL.revokeObjectURL(a.href);
-  showToast(imgFiles.length > 0 ? `엑셀 + 이미지 ${imgFiles.length}개 ZIP 다운로드 완료 ✓` : '엑셀 ZIP 다운로드 완료 ✓');
-  // 구글 시트 제출은 완전히 분리해서 실행
+  showToast(imgFiles.length > 0 ? `평가 결과 ZIP 다운로드 완료 ✓` : '평가 결과 다운로드 완료 ✓');
   window.setTimeout(function() { submitToSheets(); }, 1000);
 }
 
